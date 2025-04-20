@@ -162,8 +162,26 @@ function(custom_set_callback OUTPUT_FILENAME INPUT_FILENAME INPUT_LINE_INDEX INP
     doxygen_set_callback(${ARGV})
 endfunction()
 
+## @brief Custom callback for a line that matched the comment pattern
+##
+## @param OUTPUT_FILENAME  The output file for generating code into
+## @param INPUT_FILENAME   The input file being parsed
+## @param INPUT_LINE_INDEX The line index of the matched line from the input file
+## @param INPUT_LINE       The matched line from the input file
+##
+## @details ARGV holds all arguments to the function where as ARGN holds the list
+## of arguments past the last expected argument
+##
+## ARGV = {OUTPUT_FILENAME, INPUT_FILENAME, INPUT_LINE_INDEX, INPUT_LINE, ...}
+## ARGN = {...}
+##
+## @see https://cmake.org/cmake/help/latest/command/function.html#arguments
 function(custom_comment_callback OUTPUT_FILENAME INPUT_FILENAME INPUT_LINE_INDEX INPUT_LINE)
     file(APPEND ${OUTPUT_FILENAME} "${INPUT_LINE}\n")
+    cmake_parse_arguments(CCC "CUSTOM" "" "" ${ARGN})
+    if(CCC_CUSTOM)
+        message(DEBUG "CUSTOM received")
+    endif()
 endfunction()
 
 # generate doxygen for all cmake files
@@ -173,9 +191,8 @@ foreach(FILENAME IN LISTS CMAKE_FILES_FOR_DOXYGEN)
         ${FILENAME} ${FILENAME_OUT}
         # declare pattern for callback
         "CMAKE_EMPTY,CMAKE_COMMENT,CMAKE_FUNCTION,CMAKE_MACRO,CMAKE_OPTION,CMAKE_SET"
-        #              <pattern>                           <callback>
-        # CMAKE_EMPTY    "^ *$"                              doxygen_empty_callback
-        CMAKE_COMMENT  "^##.*$"                            custom_comment_callback
+        # <mv-keyword> <pattern>                           <callback>               <args>
+        CMAKE_COMMENT  "^##.*$"                            custom_comment_callback  CUSTOM
         CMAKE_FUNCTION "^[Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn]" custom_function_callback
         CMAKE_MACRO    "^[Mm][Aa][Cc][Rr][Oo]"             custom_macro_callback
         CMAKE_OPTION   "^[Oo][Pp][Tt][Ii][Oo][Nn]"         custom_option_callback
