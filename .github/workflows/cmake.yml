@@ -1,0 +1,43 @@
+name: CMake Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ make
+        sudo apt-get install doxygen
+
+    - name: Create build directory
+      run: mkdir build
+
+    - name: CMake Configure
+      run: cmake -S . -B build
+
+    - name: CMake Build
+      run: cmake --build build
+
+    - name: CMake Install
+      run: cmake --install build --prefix build/install
+
+    - name: CMake CPack
+      run: cmake --build build --target package
+
+    - name: Upload ZIP artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: doxygen-for-cmake-0.1.0
+        path: build/doxygen-for-cmake-0.1.0.zip
