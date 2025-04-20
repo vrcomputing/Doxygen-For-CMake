@@ -3,15 +3,19 @@ cmake_minimum_required(VERSION 3.27)
 
 project(DoxygenForCMake VERSION 0.1.0)
 
-option(DOXYGEN_CMAKE_GROUPING "Group CMake entities e.g. options, functions, ..." ON)
+option(DOXYGEN_CMAKE_GROUPING "If enabled group CMake entities e.g. options, functions, ..." ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 include(doxygen_cmake)
+
+# we only include those so CMake validates them
 include(example_functions)
 include(example_macros)
 include(example_options)
 include(example_set)
+
+include(customization)
 
 find_package(Doxygen REQUIRED)
 
@@ -70,119 +74,20 @@ set(DOXYGEN_GENERATED_INPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doxygen/generated)
 
 # generate a list of doxygen groups to put the cmake entities in
 if(DOXYGEN_CMAKE_GROUPING)
-set(DOXYGEN_CMAKE_GROUPS_FILE ${DOXYGEN_GENERATED_INPUT_DIR}/doxygen_groups.dox)
-file(WRITE ${DOXYGEN_CMAKE_GROUPS_FILE}
-[[
-/// @defgroup cmake_function CMake Functions
-/// @{
-/// @}
-///
-/// @defgroup cmake_macro CMake Macros
-/// @{
-/// @}
-///
-/// @defgroup cmake_option CMake Options
-/// @{
-/// @}
-///
-/// @defgroup cmake_variable CMake Variables
-/// @{
-/// @}
-///
-/// @defgroup cmake_cache_variable CMake Cache Variables
-/// @{
-/// @}
-]])
-
-# list of individual files as input for doxygen
-list(APPEND CMAKE_DOXYGEN_INPUT ${DOXYGEN_CMAKE_GROUPS_FILE})
-
+    set(DOXYGEN_CMAKE_GROUPS_FILE ${DOXYGEN_GENERATED_INPUT_DIR}/doxygen_groups.dox)
+    custom_groups_file(${DOXYGEN_CMAKE_GROUPS_FILE})
+    list(APPEND CMAKE_DOXYGEN_INPUT ${DOXYGEN_CMAKE_GROUPS_FILE})
 endif()
 
-
+list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/doxygen_cmake.cmake)
 list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/example_functions.cmake)
 list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/example_macros.cmake)
 list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/example_options.cmake)
 list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/example_set.cmake)
-
-function(custom_option_callback OUTPUT_FILENAME INPUT_FILENAME INPUT_LINE_INDEX INPUT_LINE)
-    if(DOXYGEN_CMAKE_GROUPING)
-        file(APPEND ${OUTPUT_FILENAME} "##\n")
-        file(APPEND ${OUTPUT_FILENAME} "## @details\n")
-        file(APPEND ${OUTPUT_FILENAME} "## @ingroup cmake_option\n")
-        file(APPEND ${OUTPUT_FILENAME} "## @ref cmake_option \"\"\n")
-        file(APPEND ${OUTPUT_FILENAME} "##\n")
-    endif()
-    doxygen_option_callback(${ARGV})
-endfunction()
-
-function(custom_function_callback OUTPUT_FILENAME INPUT_FILENAME INPUT_LINE_INDEX INPUT_LINE)
-    if(DOXYGEN_CMAKE_GROUPING)
-        file(APPEND ${OUTPUT_FILENAME} "##\n")
-        file(APPEND ${OUTPUT_FILENAME} "## @ingroup cmake_function\n")
-        file(APPEND ${OUTPUT_FILENAME} "## @ref cmake_function\n")
-        file(APPEND ${OUTPUT_FILENAME} "##\n")
-    endif()
-    doxygen_function_callback(${ARGV})
-endfunction()
-
-function(custom_macro_callback OUTPUT_FILENAME INPUT_FILENAME INPUT_LINE_INDEX INPUT_LINE)
-    if(DOXYGEN_CMAKE_GROUPING)
-        file(APPEND ${OUTPUT_FILENAME} "##\n")
-        file(APPEND ${OUTPUT_FILENAME} "## @ingroup cmake_macro\n")
-        file(APPEND ${OUTPUT_FILENAME} "## @ref cmake_macro\n")
-        file(APPEND ${OUTPUT_FILENAME} "##\n")
-    endif()
-    doxygen_macro_callback(${ARGV})
-endfunction()
-
-function(custom_set_callback OUTPUT_FILENAME INPUT_FILENAME INPUT_LINE_INDEX INPUT_LINE)
-    if(DOXYGEN_CMAKE_GROUPING)
-
-        math(EXPR LINE_INDEX "${INPUT_LINE_INDEX}-1")
-        doxygen_get_line(${INPUT_FILENAME} ${LINE_INDEX} PREVIOUS_LINE)
-        if(PREVIOUS_LINE MATCHES "^ *##")
-            doxygen_tokenize(${INPUT_LINE} TOKENS)
-            cmake_parse_arguments(CCC "PARENT_SCOPE;FORCE" "" "CACHE" ${TOKENS})
-            set(DOXYGEN_CMAKE_GROUP "cmake_variable")
-            if(CCC_CACHE)
-                set(DOXYGEN_CMAKE_GROUP "cmake_cache_variable")
-            endif()
-            file(APPEND ${OUTPUT_FILENAME} "##\n")
-            file(APPEND ${OUTPUT_FILENAME} "## @ingroup ${DOXYGEN_CMAKE_GROUP}\n")
-            file(APPEND ${OUTPUT_FILENAME} "##\n")
-            file(APPEND ${OUTPUT_FILENAME} "## @ref ${DOXYGEN_CMAKE_GROUP} \"\"\n")
-            file(APPEND ${OUTPUT_FILENAME} "##\n")
-            if(CCC_FORCE)
-                file(APPEND ${OUTPUT_FILENAME} "## @remark  @c [FORCE]\n")
-            endif()
-        endif()
-    endif()
-
-    doxygen_set_callback(${ARGV})
-endfunction()
-
-## @brief Custom callback for a line that matched the comment pattern
-##
-## @param OUTPUT_FILENAME  The output file for generating code into
-## @param INPUT_FILENAME   The input file being parsed
-## @param INPUT_LINE_INDEX The line index of the matched line from the input file
-## @param INPUT_LINE       The matched line from the input file
-##
-## @details ARGV holds all arguments to the function where as ARGN holds the list
-## of arguments past the last expected argument
-##
-## ARGV = {OUTPUT_FILENAME, INPUT_FILENAME, INPUT_LINE_INDEX, INPUT_LINE, ...}
-## ARGN = {...}
-##
-## @see https://cmake.org/cmake/help/latest/command/function.html#arguments
-function(custom_comment_callback OUTPUT_FILENAME INPUT_FILENAME INPUT_LINE_INDEX INPUT_LINE)
-    file(APPEND ${OUTPUT_FILENAME} "${INPUT_LINE}\n")
-    cmake_parse_arguments(CCC "CUSTOM" "" "" ${ARGN})
-    if(CCC_CUSTOM)
-        message(DEBUG "CUSTOM received")
-    endif()
-endfunction()
+list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_FILE})
+if(DOXYGEN_CMAKE_GROUPING)
+    list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/customization.cmake)
+endif()
 
 # generate doxygen for all cmake files
 foreach(FILENAME IN LISTS CMAKE_FILES_FOR_DOXYGEN)
