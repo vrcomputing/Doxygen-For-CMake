@@ -4,16 +4,21 @@ cmake_minimum_required(VERSION 3.27)
 project(DoxygenForCMake VERSION 0.1.0)
 
 option(DOXYGEN_CMAKE_GROUPING "If enabled group CMake entities e.g. options, functions, ..." ON)
+option(DOXYGEN_CMAKE_GROUPING "If enabled group CMake entities e.g. options, functions, ..." ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 include(doxygen_cmake)
 
 # we only include those so CMake validates them
+
+# we only include those so CMake validates them
 include(example_functions)
 include(example_macros)
 include(example_options)
 include(example_set)
+
+include(customization)
 
 include(customization)
 
@@ -77,6 +82,9 @@ if(DOXYGEN_CMAKE_GROUPING)
     set(DOXYGEN_CMAKE_GROUPS_FILE ${DOXYGEN_GENERATED_INPUT_DIR}/doxygen_groups.dox)
     custom_groups_file(${DOXYGEN_CMAKE_GROUPS_FILE})
     list(APPEND CMAKE_DOXYGEN_INPUT ${DOXYGEN_CMAKE_GROUPS_FILE})
+    set(DOXYGEN_CMAKE_GROUPS_FILE ${DOXYGEN_GENERATED_INPUT_DIR}/doxygen_groups.dox)
+    custom_groups_file(${DOXYGEN_CMAKE_GROUPS_FILE})
+    list(APPEND CMAKE_DOXYGEN_INPUT ${DOXYGEN_CMAKE_GROUPS_FILE})
 endif()
 
 list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/doxygen_cmake.cmake)
@@ -84,6 +92,10 @@ list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/example_func
 list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/example_macros.cmake)
 list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/example_options.cmake)
 list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/example_set.cmake)
+list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_FILE})
+if(DOXYGEN_CMAKE_GROUPING)
+    list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/customization.cmake)
+endif()
 list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_FILE})
 if(DOXYGEN_CMAKE_GROUPING)
     list(APPEND CMAKE_FILES_FOR_DOXYGEN ${CMAKE_CURRENT_LIST_DIR}/cmake/customization.cmake)
